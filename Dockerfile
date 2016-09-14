@@ -1,17 +1,21 @@
-# [WIP] placeholder 
-FROM 
-MAINTAINER 
+FROM java:8-jre
 
+ENV JMETER_VERSION 2.13
+ENV ES_VERSION 2.3.1
+ENV JMETER_PATH /opt/apache-jmeter
 
-# Install jmeter
+# Install Apache JMeter
+WORKDIR /opt
+RUN wget -O - http://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz | tar xzf - \
+&& mv /opt/apache-jmeter-${JMETER_VERSION} ${JMETER_PATH}
 
+# Download the required dependencies
+WORKDIR ${JMETER_PATH}/lib
+RUN wget https://github.com/rflorenc/Elasticmeter/blob/master/utils/pull_jars.sh && \
+./pull_jars.sh $ES_VERSION $JMETER_VERSION
 
-# Wget/Copy dependency lucene and elasticsearch jars
-RUN cd ${JMETER_PATH}/lib
-./pull_jars.sh ./
+COPY 231elasticsearch.jar ./ext/
 
-# Add ElasticSearchBackendListener
-ADD elasticsearch.jar ${JMETER_PATH}/lib/ext/ 
-
-WORKDIR ${JMETER_PATH}
-ENTRYPOINT ["./jmeter.sh"]
+# Run jmeter in server mode
+WORKDIR ${JMETER_PATH}/bin
+CMD ["./jmeter", "-s"]
